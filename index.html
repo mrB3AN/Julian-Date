@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Julian Date" />
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <title>Julian Date Calculator</title>
+  <style>
+    :root {
+      --bg: #0f172a; --card: #172033; --text: #f8fafc; --muted: #cbd5e1;
+      --accent: #38bdf8; --green: #22c55e; --danger: #fb7185;
+      --border: rgba(255,255,255,0.12); --shadow: 0 20px 60px rgba(0,0,0,0.35);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0; min-height: 100vh; color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: radial-gradient(circle at top left, rgba(56,189,248,.24), transparent 32rem),
+                  radial-gradient(circle at bottom right, rgba(34,197,94,.18), transparent 28rem), var(--bg);
+      padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+    }
+    .wrap { max-width: 520px; margin: 0 auto; padding: 24px 0 36px; }
+    h1 { font-size: 2rem; line-height: 1.05; margin: 0 0 8px; letter-spacing: -.04em; }
+    .sub { color: var(--muted); margin: 0; font-size: .98rem; line-height: 1.4; }
+    .status {
+      display: inline-flex; align-items: center; gap: 7px; margin-top: 12px; padding: 8px 10px;
+      border-radius: 999px; background: rgba(255,255,255,.09); border: 1px solid var(--border);
+      color: var(--muted); font-size: .82rem; font-weight: 700;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,.065), rgba(255,255,255,.025)), var(--card);
+      border: 1px solid var(--border); border-radius: 22px; padding: 18px; margin: 14px 0;
+      box-shadow: var(--shadow);
+    }
+    label {
+      display: block; color: var(--muted); font-size: .82rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px;
+    }
+    input {
+      width: 100%; appearance: none; border: 1px solid var(--border); background: rgba(15,23,42,.72);
+      color: var(--text); border-radius: 16px; padding: 15px 14px; font-size: 1.05rem; outline: none;
+    }
+    input:focus { border-color: rgba(56,189,248,.9); box-shadow: 0 0 0 4px rgba(56,189,248,.16); }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    button {
+      border: 0; border-radius: 16px; padding: 14px 12px; min-height: 50px; cursor: pointer;
+      font-size: 1rem; font-weight: 750; color: #07111f; background: var(--accent);
+    }
+    button.secondary { background: rgba(255,255,255,.10); color: var(--text); border: 1px solid var(--border); }
+    button.green { background: var(--green); color: #052e16; }
+    .results { display: grid; gap: 10px; margin-top: 14px; }
+    .result { background: rgba(15,23,42,.68); border: 1px solid var(--border); border-radius: 18px; padding: 14px; }
+    .name { color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; font-weight: 800; margin-bottom: 4px; }
+    .value { font-size: 1.72rem; font-weight: 850; letter-spacing: -.02em; word-break: break-word; }
+    .small { font-size: 1.1rem; font-weight: 700; }
+    .copy { margin-top: 10px; width: 100%; }
+    .note { color: var(--muted); font-size: .9rem; line-height: 1.45; margin: 10px 0 0; }
+    .error { color: var(--danger); font-weight: 700; margin-top: 10px; min-height: 1.2em; }
+    .footer { color: rgba(203,213,225,.82); font-size: .82rem; text-align: center; margin-top: 20px; line-height: 1.4; }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <h1>Julian Date Calculator</h1>
+      <p class="sub">Quick day-of-year, YYDDD, YYYYDDD, and reverse lookup.</p>
+      <div class="status"><span class="dot"></span><span id="offlineStatus">DST fix installed • offline capable</span></div>
+    </header>
+
+    <section class="card">
+      <label for="dateInput">Select Date</label>
+      <input id="dateInput" type="date" />
+      <div class="grid" style="margin-top:10px;">
+        <button class="secondary" id="prevDay">− 1 Day</button>
+        <button class="secondary" id="nextDay">+ 1 Day</button>
+      </div>
+      <button class="green" id="todayBtn" style="width:100%;margin-top:10px;">Use Today</button>
+      <div class="results">
+        <div class="result"><div class="name">Day of Year</div><div class="value" id="doyOut">---</div></div>
+        <div class="result"><div class="name">Common Julian Format</div><div class="value" id="yydddOut">---</div><button class="copy secondary" data-copy="yydddOut">Copy YYDDD</button></div>
+        <div class="result"><div class="name">Full Year Format</div><div class="value" id="yyyydddOut">---</div><button class="copy secondary" data-copy="yyyydddOut">Copy YYYYDDD</button></div>
+        <div class="result"><div class="name">Normal Date</div><div class="value small" id="normalOut">---</div></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <label for="julianInput">Convert Julian Back to Date</label>
+      <input id="julianInput" inputmode="numeric" pattern="[0-9]*" placeholder="Example: 26146, 2026146, or 146" />
+      <div class="grid" style="margin-top:10px;">
+        <button id="convertBtn">Convert</button>
+        <button class="secondary" id="clearBtn">Clear</button>
+      </div>
+      <p class="note">Enter <b>YYDDD</b>, <b>YYYYDDD</b>, or just <b>DDD</b>. DDD uses the selected year above.</p>
+      <div class="error" id="errorOut"></div>
+      <div class="results">
+        <div class="result"><div class="name">Converted Date</div><div class="value small" id="convertedOut">---</div></div>
+      </div>
+    </section>
+
+    <div class="footer">Ordinal day-of-year format used for maintenance/logistics work, not astronomical Julian Day Number.</div>
+  </main>
+
+  <script>
+    const dateInput = document.getElementById("dateInput");
+    const doyOut = document.getElementById("doyOut");
+    const yydddOut = document.getElementById("yydddOut");
+    const yyyydddOut = document.getElementById("yyyydddOut");
+    const normalOut = document.getElementById("normalOut");
+    const julianInput = document.getElementById("julianInput");
+    const convertedOut = document.getElementById("convertedOut");
+    const errorOut = document.getElementById("errorOut");
+
+    function pad(num, len) { return String(num).padStart(len, "0"); }
+    function localISODate(d) { return `${d.getFullYear()}-${pad(d.getMonth()+1,2)}-${pad(d.getDate(),2)}`; }
+    function parseLocalDate(value) {
+      const [y, m, d] = value.split("-").map(Number);
+      return new Date(y, m - 1, d);
+    }
+
+    function dayOfYear(d) {
+      // Use UTC date parts so a daylight saving time clock change never shifts the result by one day.
+      const start = Date.UTC(d.getFullYear(), 0, 1);
+      const selected = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+      return Math.floor((selected - start) / 86400000) + 1;
+    }
+
+    function isLeapYear(y) { return (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0; }
+    function formatNormal(d) {
+      return d.toLocaleDateString(undefined, { weekday:"short", year:"numeric", month:"short", day:"numeric" });
+    }
+
+    function updateOutputs() {
+      if (!dateInput.value) return;
+      const d = parseLocalDate(dateInput.value);
+      const year = d.getFullYear();
+      const ddd = pad(dayOfYear(d), 3);
+      doyOut.textContent = ddd;
+      yydddOut.textContent = `${pad(year % 100, 2)}${ddd}`;
+      yyyydddOut.textContent = `${year}${ddd}`;
+      normalOut.textContent = formatNormal(d);
+    }
+
+    function setToday() { dateInput.value = localISODate(new Date()); updateOutputs(); }
+    function shiftDay(delta) {
+      const d = parseLocalDate(dateInput.value || localISODate(new Date()));
+      d.setDate(d.getDate() + delta);
+      dateInput.value = localISODate(d);
+      updateOutputs();
+    }
+
+    function convertJulian() {
+      errorOut.textContent = "";
+      convertedOut.textContent = "---";
+      const raw = julianInput.value.trim();
+      if (!/^\d+$/.test(raw)) { errorOut.textContent = "Use numbers only."; return; }
+
+      let year, ddd;
+      if (raw.length === 3) {
+        year = parseLocalDate(dateInput.value).getFullYear(); ddd = Number(raw);
+      } else if (raw.length === 5) {
+        const yy = Number(raw.slice(0,2));
+        year = yy >= 70 ? 1900 + yy : 2000 + yy;
+        ddd = Number(raw.slice(2));
+      } else if (raw.length === 7) {
+        year = Number(raw.slice(0,4)); ddd = Number(raw.slice(4));
+      } else {
+        errorOut.textContent = "Enter DDD, YYDDD, or YYYYDDD."; return;
+      }
+
+      const max = isLeapYear(year) ? 366 : 365;
+      if (ddd < 1 || ddd > max) {
+        errorOut.textContent = `${year} only has Julian days 001 through ${max}.`; return;
+      }
+      const d = new Date(year, 0, ddd);
+      convertedOut.textContent = `${formatNormal(d)} (${localISODate(d)})`;
+    }
+
+    async function copyTextFrom(id, button) {
+      try {
+        await navigator.clipboard.writeText(document.getElementById(id).textContent);
+        const old = button.textContent;
+        button.textContent = "Copied!";
+        setTimeout(() => button.textContent = old, 900);
+      } catch { alert("Copy failed. Press and hold the number to copy manually."); }
+    }
+
+    dateInput.addEventListener("change", updateOutputs);
+    document.getElementById("todayBtn").addEventListener("click", setToday);
+    document.getElementById("prevDay").addEventListener("click", () => shiftDay(-1));
+    document.getElementById("nextDay").addEventListener("click", () => shiftDay(1));
+    document.getElementById("convertBtn").addEventListener("click", convertJulian);
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      julianInput.value = ""; convertedOut.textContent = "---"; errorOut.textContent = "";
+    });
+    document.querySelectorAll(".copy").forEach(btn => {
+      btn.addEventListener("click", () => copyTextFrom(btn.dataset.copy, btn));
+    });
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./service-worker.js").catch(() => {
+          const el = document.getElementById("offlineStatus");
+          if (el) el.textContent = "DST fix installed • offline cache unavailable";
+        });
+      });
+    }
+    setToday();
+  </script>
+</body>
+</html>
